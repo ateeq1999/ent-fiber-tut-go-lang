@@ -1,6 +1,11 @@
 package schema
 
-import "entgo.io/ent"
+import (
+	"time"
+
+	"entgo.io/ent"
+	"entgo.io/ent/schema/field"
+)
 
 // User holds the schema definition for the User entity.
 type User struct {
@@ -9,7 +14,13 @@ type User struct {
 
 // Fields of the User.
 func (User) Fields() []ent.Field {
-	return nil
+	return []ent.Field{
+		field.Int("age").Positive(),
+		field.String("name").Default("Ateeg"),
+		field.String("email").Unique().NotEmpty(),
+		field.String("password").Default("password"),
+		field.Time("created_at").Default(time.Now()),
+	}
 }
 
 // Edges of the User.

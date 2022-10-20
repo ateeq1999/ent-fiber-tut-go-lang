@@ -5,6 +5,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 // User holds the schema definition for the User entity.
@@ -26,4 +27,11 @@ func (User) Fields() []ent.Field {
 // Edges of the User.
 func (User) Edges() []ent.Edge {
 	return nil
+}
+
+// Indesxes of the User.
+func (User) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("email").Unique(),
+	}
 }

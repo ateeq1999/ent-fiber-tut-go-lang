@@ -1,7 +1,8 @@
 package main
 
 import (
-	UserControllers "ent-demo/controllers"
+	controllers "ent-demo/controllers"
+	userscontrollers "ent-demo/controllers"
 	"ent-demo/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,11 +24,19 @@ func main() {
 
     UserApi := app.Group("/users")
 
-    UserApi.Get("/", UserControllers.GetUsers)
-    UserApi.Post("/", UserControllers.CreateUser)
-    UserApi.Get("/:id", UserControllers.GetUser)
-    UserApi.Put("/:id", UserControllers.UpdateUser)
-    UserApi.Delete("/:id", UserControllers.DeleteUser)
+    PostApi := app.Group("/posts")
+
+    UserApi.Get("/", userscontrollers.GetUsers)
+    UserApi.Post("/", userscontrollers.CreateUser)
+    UserApi.Get("/:id", userscontrollers.GetUser)
+    UserApi.Put("/:id", userscontrollers.UpdateUser)
+    UserApi.Delete("/:id", userscontrollers.DeleteUser)
+
+    PostApi.Get("/", controllers.GetPosts)
+    PostApi.Post("/", controllers.CreatePost)
+    PostApi.Get("/:id", controllers.GetPost)
+    PostApi.Put("/:id", controllers.UpdatePost)
+    PostApi.Delete("/:id", controllers.DeletePost)
 
 	app.Listen(":3000")
 

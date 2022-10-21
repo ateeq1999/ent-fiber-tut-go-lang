@@ -26,6 +26,28 @@ type User struct {
 	Password string `json:"password,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the UserQuery when eager-loading is set.
+	Edges     UserEdges `json:"edges"`
+	post_user *int
+}
+
+// UserEdges holds the relations/edges for other nodes in the graph.
+type UserEdges struct {
+	// Posts holds the value of the posts edge.
+	Posts []*Post `json:"posts,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// PostsOrErr returns the Posts value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) PostsOrErr() ([]*Post, error) {
+	if e.loadedTypes[0] {
+		return e.Posts, nil
+	}
+	return nil, &NotLoadedError{edge: "posts"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -39,6 +61,8 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case user.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
+		case user.ForeignKeys[0]: // post_user
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type User", columns[i])
 		}
@@ -90,9 +114,21 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				u.CreatedAt = value.Time
 			}
+		case user.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field post_user", value)
+			} else if value.Valid {
+				u.post_user = new(int)
+				*u.post_user = int(value.Int64)
+			}
 		}
 	}
 	return nil
+}
+
+// QueryPosts queries the "posts" edge of the User entity.
+func (u *User) QueryPosts() *PostQuery {
+	return (&UserClient{config: u.config}).QueryPosts(u)
 }
 
 // Update returns a builder for updating this User.

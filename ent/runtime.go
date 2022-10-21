@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"ent-demo/ent/post"
 	"ent-demo/ent/schema"
 	"ent-demo/ent/user"
 	"time"
@@ -12,6 +13,16 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	postFields := schema.Post{}.Fields()
+	_ = postFields
+	// postDescTitle is the schema descriptor for title field.
+	postDescTitle := postFields[1].Descriptor()
+	// post.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	post.TitleValidator = postDescTitle.Validators[0].(func(string) error)
+	// postDescCreatedAt is the schema descriptor for created_at field.
+	postDescCreatedAt := postFields[2].Descriptor()
+	// post.DefaultCreatedAt holds the default value on creation for the created_at field.
+	post.DefaultCreatedAt = postDescCreatedAt.Default.(time.Time)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescAge is the schema descriptor for age field.

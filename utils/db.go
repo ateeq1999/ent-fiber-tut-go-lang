@@ -9,7 +9,11 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var MyClient *ent.Client
+var (
+	MyClient *ent.Client
+	MyCtx = context.Background()
+)
+
 
 func ConnectToDB() {
 	client, err := ent.Open("mysql", "root:@tcp(localhost:3306)/ent_db?parseTime=True")

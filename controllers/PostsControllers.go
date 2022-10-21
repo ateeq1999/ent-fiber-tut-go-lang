@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"ent-demo/ent/post"
 	"ent-demo/ent/user"
 	"ent-demo/utils"
 	"log"
@@ -9,15 +10,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type User struct {
-    Name string `json:"name" xml:"name" form:"name"`
-    Password string `json:"password" xml:"password" form:"password"`
-    Email string `json:"email" xml:"email" form:"email"`
-    Age int `json:"age" xml:"age" form:"age"`
+type Post struct {
+    Title string `json:"title" xml:"title" form:"title"`
+    UserId int `json:"userId" xml:"userId" form:"userId"`
 }
 
-func GetUsers(c *fiber.Ctx) error {
-	users, entError := utils.MyClient.User.
+func GetPosts(c *fiber.Ctx) error {
+	posts, entError := utils.MyClient.Post.
 		Query().
 		All(utils.MyCtx)
 
@@ -29,33 +28,44 @@ func GetUsers(c *fiber.Ctx) error {
 	}
 
 	if entError == nil {
-		log.Println("user Created : ", users)
+		log.Println("Post Created : ", posts)
 	}
 
 	return c.Status(200).JSON(fiber.Map{
 		"success": true,
-		"users": users,
+		"posts": posts,
 	})
 }
 
-func CreateUser(c *fiber.Ctx) error {
-	u := new(User)
+func CreatePost(c *fiber.Ctx) error {
+	postData := new(Post)
 
-	if er := c.BodyParser(u); er != nil {
+	if er := c.BodyParser(postData); er != nil {
 		return c.Status(404).JSON(fiber.Map{
             "success": false,
             "error":   er,
         })
 	}
 
+	userData, userEntError := utils.MyClient.User.
+		Query().
+		Where(user.IDEQ(postData.UserId)).
+		Only(utils.MyCtx)
+
+	if userEntError != nil {
+		return c.Status(404).JSON(fiber.Map{
+			"success": false,
+			"userEntError":   userEntError,
+		})
+	}
+
 	log.Println("MyClient : " , utils.MyClient)
 
-	createdUser, err := utils.MyClient.User.
+	createdPost, err := utils.MyClient.Post.
 		Create().
-		SetName(u.Name).
-		SetEmail(u.Email).
-		SetPassword(u.Password).
-		SetAge(u.Age).
+		SetTitle(postData.Title).
+		SetUserId(postData.UserId).
+		AddUser(userData).
 		Save(utils.MyCtx)
 
 	if err != nil {
@@ -66,19 +76,19 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	if err == nil {
-		log.Println("user Created : ", createdUser)
+		log.Println("Post Created : ", createdPost)
 	}
 
 	return c.Status(200).JSON(fiber.Map{
 		"success": true,
-		"user": createdUser,
+		"Post": createdPost,
 	})
 }
 
-func UpdateUser(c *fiber.Ctx) error {
-	u := new(User)
+func UpdatePost(c *fiber.Ctx) error {
+	postData := new(Post)
 
-	userId, paramsErr := strconv.Atoi(c.Params("id"))
+	postId, paramsErr := strconv.Atoi(c.Params("id"))
 
 	if paramsErr != nil {
 		return c.Status(404).JSON(fiber.Map{
@@ -87,19 +97,17 @@ func UpdateUser(c *fiber.Ctx) error {
         })
 	}
 
-	if BodyParserError := c.BodyParser(u); BodyParserError != nil {
+	if BodyParserError := c.BodyParser(postData); BodyParserError != nil {
 		return c.Status(404).JSON(fiber.Map{
             "success": false,
             "BodyParserError":   BodyParserError,
         })
 	}
 
-	updatedUser, entError := utils.MyClient.User.
-		UpdateOneID(userId).
-		SetName(u.Name).
-		SetEmail(u.Email).
-		SetPassword(u.Password).
-		SetAge(u.Age).
+	updatedPost, entError := utils.MyClient.Post.
+		UpdateOneID(postId).
+		SetTitle(postData.Title).
+		SetUserId(postData.UserId).
 		Save(utils.MyCtx)
 
 	if entError != nil {
@@ -110,17 +118,17 @@ func UpdateUser(c *fiber.Ctx) error {
 	}
 
 	if entError == nil {
-		log.Println("user Created : ", updatedUser)
+		log.Println("Post Created : ", updatedPost)
 	}
 
 	return c.Status(200).JSON(fiber.Map{
 		"success": true,
-		"user": updatedUser,
+		"Post": updatedPost,
 	})
 }
 
-func GetUser(c *fiber.Ctx) error {
-	userId, paramsErr := strconv.Atoi(c.Params("id"))
+func GetPost(c *fiber.Ctx) error {
+	postId, paramsErr := strconv.Atoi(c.Params("id"))
 
 	if paramsErr != nil {
 		return c.Status(404).JSON(fiber.Map{
@@ -129,9 +137,9 @@ func GetUser(c *fiber.Ctx) error {
         })
 	}
 
-	getUser, entError := utils.MyClient.User.
+	getPost, entError := utils.MyClient.Post.
 		Query().
-		Where(user.IDEQ(userId)).
+		Where(post.IDEQ(postId)).
 		Only(utils.MyCtx)
 
 	if entError != nil {
@@ -142,17 +150,17 @@ func GetUser(c *fiber.Ctx) error {
 	}
 
 	if entError == nil {
-		log.Println("user Created : ", getUser)
+		log.Println("Post Created : ", getPost)
 	}
 
 	return c.Status(200).JSON(fiber.Map{
 		"success": true,
-		"user": getUser,
+		"Post": getPost,
 	})
 }
 
-func DeleteUser(c *fiber.Ctx) error {
-	userId, paramsErr := strconv.Atoi(c.Params("id"))
+func DeletePost(c *fiber.Ctx) error {
+	postId, paramsErr := strconv.Atoi(c.Params("id"))
 
 	if paramsErr != nil {
 		return c.Status(404).JSON(fiber.Map{
@@ -161,8 +169,8 @@ func DeleteUser(c *fiber.Ctx) error {
         })
 	}
 
-	entError := utils.MyClient.User.
-		DeleteOneID(userId).
+	entError := utils.MyClient.Post.
+		DeleteOneID(postId).
 		Exec(utils.MyCtx)
 
 	if entError != nil {
@@ -174,6 +182,6 @@ func DeleteUser(c *fiber.Ctx) error {
 
 	return c.Status(200).JSON(fiber.Map{
 		"success": true,
-		"msg": "user with id : " + c.Params("id"),
+		"msg": "Post with id : " + c.Params("id"),
 	})
 }

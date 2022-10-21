@@ -2,8 +2,10 @@ package UserControllers
 
 import (
 	"context"
+	"ent-demo/ent/user"
 	"ent-demo/utils"
 	"log"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -19,6 +21,28 @@ var(
 	ctx = context.Background()
 )
 
+func GetUsers(c *fiber.Ctx) error {
+	users, entError := utils.MyClient.User.
+		Query().
+		All(ctx)
+
+	if entError != nil {
+		return c.Status(404).JSON(fiber.Map{
+            "success": false,
+            "entError":   entError,
+        })
+	}
+
+	if entError == nil {
+		log.Println("user Created : ", users)
+	}
+
+	return c.Status(200).JSON(fiber.Map{
+		"success": true,
+		"users": users,
+	})
+}
+
 func CreateUser(c *fiber.Ctx) error {
 	u := new(User)
 
@@ -31,7 +55,7 @@ func CreateUser(c *fiber.Ctx) error {
 
 	log.Println("MyClient : " , utils.MyClient)
 
-	entUser, err := utils.MyClient.User.
+	createdUser, err := utils.MyClient.User.
 		Create().
 		SetName(u.Name).
 		SetEmail(u.Email).
@@ -47,32 +71,117 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	if err == nil {
-		log.Println("user Created : ", entUser)
+		log.Println("user Created : ", createdUser)
 	}
 
 	return c.Status(200).JSON(fiber.Map{
 		"success": true,
-		"user": entUser,
+		"user": createdUser,
 	})
 }
 
-// func SaveUser(ctx context.Context, client *ent.Client, u *User) (*ent.User, error) {
-// 	u, err := client.User.
-// 		Create().
-// 		SetName(u.Name).
-// 		SetEmail(u.Email).
-// 		SetPassword(u.Password).
-// 		SetAge(u.Age).
-// 		Save(ctx)
+func UpdateUser(c *fiber.Ctx) error {
+	u := new(User)
 
-// 	if err != nil {
-// 		return nil, fmt.Errorf("canot update user : %w", err)
-// 	}
+	userId, paramsErr := strconv.Atoi(c.Params("id"))
 
-// 	log.Panicln("user uodated : ", u)
+	if paramsErr != nil {
+		return c.Status(404).JSON(fiber.Map{
+            "success": false,
+            "paramsErr":   paramsErr,
+        })
+	}
 
-// 	return u, nil
-// }
+	if BodyParserError := c.BodyParser(u); BodyParserError != nil {
+		return c.Status(404).JSON(fiber.Map{
+            "success": false,
+            "BodyParserError":   BodyParserError,
+        })
+	}
+
+	updatedUser, entError := utils.MyClient.User.
+		UpdateOneID(userId).
+		SetName(u.Name).
+		SetEmail(u.Email).
+		SetPassword(u.Password).
+		SetAge(u.Age).
+		Save(ctx)
+
+	if entError != nil {
+		return c.Status(404).JSON(fiber.Map{
+            "success": false,
+            "entError":   entError,
+        })
+	}
+
+	if entError == nil {
+		log.Println("user Created : ", updatedUser)
+	}
+
+	return c.Status(200).JSON(fiber.Map{
+		"success": true,
+		"user": updatedUser,
+	})
+}
+
+func GetUser(c *fiber.Ctx) error {
+	userId, paramsErr := strconv.Atoi(c.Params("id"))
+
+	if paramsErr != nil {
+		return c.Status(404).JSON(fiber.Map{
+            "success": false,
+            "paramsErr":   paramsErr,
+        })
+	}
+
+	getUser, entError := utils.MyClient.User.
+		Query().
+		Where(user.IDEQ(userId)).
+		Only(ctx)
+
+	if entError != nil {
+		return c.Status(404).JSON(fiber.Map{
+            "success": false,
+            "entError":   entError,
+        })
+	}
+
+	if entError == nil {
+		log.Println("user Created : ", getUser)
+	}
+
+	return c.Status(200).JSON(fiber.Map{
+		"success": true,
+		"user": getUser,
+	})
+}
+
+func DeleteUser(c *fiber.Ctx) error {
+	userId, paramsErr := strconv.Atoi(c.Params("id"))
+
+	if paramsErr != nil {
+		return c.Status(404).JSON(fiber.Map{
+            "success": false,
+            "paramsErr":   paramsErr,
+        })
+	}
+
+	entError := utils.MyClient.User.
+		DeleteOneID(userId).
+		Exec(ctx)
+
+	if entError != nil {
+		return c.Status(404).JSON(fiber.Map{
+            "success": false,
+            "entError":   entError,
+        })
+	}
+
+	return c.Status(200).JSON(fiber.Map{
+		"success": true,
+		"msg": "user with id : " + c.Params("id"),
+	})
+}
 
 // func UpdateUser(ctx context.Context, client *ent.Client) (*ent.User, error) {
 // 	u, err := client.User.

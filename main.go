@@ -23,8 +23,11 @@ func main() {
 
     UserApi := app.Group("/users")
 
+    UserApi.Get("/", UserControllers.GetUsers)
     UserApi.Post("/", UserControllers.CreateUser)
-    // UserApi.Get("/", UserControllers.GetUser(context.Context, *ent.Client, c *fiber.Ctx))
+    UserApi.Get("/:id", UserControllers.GetUser)
+    UserApi.Put("/:id", UserControllers.UpdateUser)
+    UserApi.Delete("/:id", UserControllers.DeleteUser)
 
 	app.Listen(":3000")
 
